@@ -65,6 +65,7 @@ function setView(name) {
   views.forEach((view) => view.classList.toggle('is-active', view.dataset.view === name));
   navLinks.forEach((link) => link.classList.toggle('active', link.dataset.route === name || (name === 'archive' && link.dataset.route === 'work') || (name === 'project' && link.dataset.route === 'work')));
   window.scrollTo({ top: 0, behavior: 'instant' });
+  updateHeader();
 }
 
 function formatTitle(title) {
@@ -132,24 +133,61 @@ document.querySelectorAll('[data-work]').forEach((link) => link.addEventListener
 window.addEventListener('hashchange', route);
 window.addEventListener('popstate', route);
 
+function updateHeader() {
+  const homeIsActive = document.querySelector('.view-home').classList.contains('is-active');
+  document.body.classList.toggle('has-scrolled', window.scrollY > window.innerHeight * .55 || !homeIsActive);
+}
+window.addEventListener('scroll', updateHeader, { passive: true });
+
+const heroWord = document.querySelector('.hero-word');
+const heroWords = ['architecture', 'space', 'belonging', 'light', 'material'];
+let heroWordTimer;
+function startWordChange() {
+  let wordIndex = 0;
+  clearInterval(heroWordTimer);
+  heroWordTimer = setInterval(() => {
+    wordIndex = (wordIndex + 1) % heroWords.length;
+    heroWord.style.opacity = '0';
+    setTimeout(() => {
+      heroWord.textContent = heroWords[wordIndex];
+      heroWord.style.opacity = '1';
+    }, 150);
+  }, 850);
+}
+function stopWordChange() {
+  clearInterval(heroWordTimer);
+  heroWord.textContent = 'architecture';
+  heroWord.style.opacity = '1';
+}
+heroWord.addEventListener('mouseenter', startWordChange);
+heroWord.addEventListener('mouseleave', stopWordChange);
+heroWord.addEventListener('focus', startWordChange);
+heroWord.addEventListener('blur', stopWordChange);
+
+const heroVideo = document.querySelector('.hero-video');
+const heroVideoSource = heroVideo.querySelector('source');
+const heroVideoSources = [
+  'https://videos.pexels.com/video-files/6615521/6615521-uhd_2160_3840_25fps.mp4',
+  'https://videos.pexels.com/video-files/7816246/7816246-hd_1920_1080_25fps.mp4',
+  'https://videos.pexels.com/video-files/31025079/13261762_3840_2160_24fps.mp4'
+];
+let heroVideoIndex = 0;
+setInterval(() => {
+  if (document.hidden) return;
+  heroVideoIndex = (heroVideoIndex + 1) % heroVideoSources.length;
+  heroVideo.style.opacity = '0';
+  setTimeout(() => {
+    heroVideoSource.src = heroVideoSources[heroVideoIndex];
+    heroVideo.load();
+    heroVideo.play().catch(() => {});
+    heroVideo.style.opacity = '1';
+  }, 450);
+}, 9000);
+
 if (window.matchMedia('(pointer: fine)').matches) {
   window.addEventListener('mousemove', (event) => { cursor.style.left = `${event.clientX}px`; cursor.style.top = `${event.clientY}px`; });
   document.querySelectorAll('a, button').forEach((element) => { element.addEventListener('mouseenter', () => cursor.classList.add('is-large')); element.addEventListener('mouseleave', () => cursor.classList.remove('is-large')); });
 }
 
-const slides = document.querySelectorAll('.hero-image');
-let slideIndex = 0;
-function changeSlide(next = true) { slides[slideIndex].style.opacity = '0'; slideIndex = (slideIndex + (next ? 1 : slides.length - 1)) % slides.length; slides[slideIndex].style.opacity = '1'; document.querySelector('.slide-count').textContent = `0${slideIndex + 1} — 03`; }
-document.querySelector('.slide-next').addEventListener('click', () => changeSlide(true));
-document.querySelector('.slide-prev').addEventListener('click', () => changeSlide(false));
-let hoverSlideTimer;
-document.querySelector('.hero-stage').addEventListener('mousemove', (event) => {
-  const bounds = event.currentTarget.getBoundingClientRect();
-  const position = (event.clientX - bounds.left) / bounds.width;
-  if (position > .7 || position < .3) {
-    clearTimeout(hoverSlideTimer);
-    hoverSlideTimer = setTimeout(() => changeSlide(position > .7), 500);
-  }
-});
-setInterval(() => { if (document.querySelector('.view-home').classList.contains('is-active')) changeSlide(true); }, 4500);
 route();
+updateHeader();
